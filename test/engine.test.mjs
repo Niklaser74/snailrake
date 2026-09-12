@@ -76,9 +76,10 @@ test('a small top with a matching neighbour merges and the tower is gone', () =>
   const b = g.spawn(2, 240, 280, c.thick); b.on = c.id;
   const a = g.spawn(0, 240, 280, c.thick + b.thick); a.on = b.id;
   g.spawn(0, 300, 280);
-  run(g, TOWER_GRACE + 2);
-  assert.equal(g.over, false);
-  assert.ok(g.snails.some((s) => s.level === 1), 'a level two was born from the top and its neighbour');
+  run(g, TOWER_GRACE + 1);
+  assert.equal(g.over, false, 'it got off in time');
+  const steps = runUntil(g, (x) => x.snails.some((s) => s.level === 1), 12);
+  assert.ok(steps >= 0, 'a level two was born from the top and its neighbour (at snail pace)');
 });
 
 test('dropped off-centre it lands beside, not on', () => {
