@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Snigelkrattan: a yellow snail riding the head of a rake, on a lawn -->
+  <defs>
+    <clipPath id="r"><rect x="0" y="0" width="512" height="512" rx="96"/></clipPath>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="512" height="512" fill="#6cc25a"/>
+    <g fill="rgba(0,0,0,0.06)">
+      <rect x="0" y="64" width="512" height="64"/><rect x="0" y="192" width="512" height="64"/>
+      <rect x="0" y="320" width="512" height="64"/><rect x="0" y="448" width="512" height="64"/>
+    </g>
+    <g fill="#ff6b8a"><circle cx="72" cy="430" r="9"/><circle cx="86" cy="418" r="9"/><circle cx="58" cy="418" r="9"/><circle cx="72" cy="406" r="9"/></g>
+    <circle cx="72" cy="418" r="6" fill="#fff2a8"/>
+    <g fill="#c084fc"><circle cx="440" cy="110" r="9"/><circle cx="454" cy="98" r="9"/><circle cx="426" cy="98" r="9"/><circle cx="440" cy="86" r="9"/></g>
+    <circle cx="440" cy="98" r="6" fill="#fff2a8"/>
+  </g>
+  <!-- rake: handle from lower right up to the head -->
+  <path d="M470 470 L262 268" stroke="#4a2c16" stroke-width="30" stroke-linecap="round"/>
+  <path d="M470 470 L262 268" stroke="#8b5a34" stroke-width="18" stroke-linecap="round"/>
+  <!-- head with tines -->
+  <path d="M120 300 L392 300" stroke="#4a2c16" stroke-width="24" stroke-linecap="round"/>
+  <g stroke="#4a2c16" stroke-width="14" stroke-linecap="round">
+    <path d="M136 310 L136 356"/><path d="M188 310 L188 356"/><path d="M240 310 L240 356"/>
+    <path d="M292 310 L292 356"/><path d="M344 310 L344 356"/><path d="M380 310 L380 356"/>
+  </g>
+  <!-- snail: foot centred, facing right, standing on the head -->
+  <g transform="translate(240 292) scale(6.4)" stroke="#4a2e1c" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M-22 0 Q-24 -6 -14 -8 L10 -8 Q24 -12 23 -4 Q24 0 18 0 Z" fill="#e0a878"/>
+    <path d="M4 -6 Q8 -20 18 -20 Q26 -20 24 -12 Q23 -6 16 -6 Z" fill="#e0a878"/>
+    <circle cx="-6" cy="-15" r="13.5" fill="#f0c419"/>
+    <path d="M-4.5 -15.5 a2 2 0 1 1 4 1.2 a5 5 0 1 1 -8.5 -3 a8.5 8.5 0 1 1 5 11" fill="none" stroke="#fff3d6" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M13 -19 Q15 -26 14 -31 M20 -19 Q24 -26 23 -34" fill="none" stroke="#e0a878" stroke-width="3.2" stroke-linecap="round"/>
+    <circle cx="14" cy="-32" r="4.6" fill="#fff" stroke-width="1"/><circle cx="23" cy="-35" r="4.6" fill="#fff" stroke-width="1"/>
+    <circle cx="15.5" cy="-32" r="2.2" fill="#1b1b1b" stroke="none"/><circle cx="24.5" cy="-35" r="2.2" fill="#1b1b1b" stroke="none"/>
+  </g>
+</svg>

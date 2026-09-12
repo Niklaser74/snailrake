@@ -1,0 +1,23 @@
+{
+  "id": "/snailrake/",
+  "name": "Snail Rake",
+  "short_name": "Snail Rake",
+  "description": "You are the gardener. Put snails down with a rake that only goes one way per button; matching snails grow together, three in a stack and it is over. A merge game with snails, offline, no account.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#6cc25a",
+  "theme_color": "#6cc25a",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

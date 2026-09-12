@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#6cc25a">
+<meta name="description" content="Snigelkrattan – du är trädgårdsmästaren. Sätt ner sniglar med en kratta som bara går åt ett håll per knapp; likadana växer ihop, tre på varandra är slut. Snail Rake: a merge game with snails.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Snail Rake">
+<title>Snigelkrattan</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="snails.se">
+<meta property="og:title" content="Snail Rake – a merge game with snails">
+<meta property="og:description" content="Krattan går bara åt ett håll per knapp, och lasten kryper. / The rake only goes one way per button, and the cargo crawls.">
+<meta property="og:image" content="https://snails.se/snailrake/icons/icon-512.png">
+<meta property="og:url" content="https://snails.se/snailrake/">
+<link rel="canonical" href="https://snails.se/snailrake/">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="lawn" aria-label="Gräsmattan"></canvas>
+</div>
+
+<!-- HUD -->
+<div id="hud" hidden>
+  <div class="hud-top">
+    <div class="stat"><span class="label" data-i18n="hud.score">Poäng</span><span id="hud-score" class="value">0</span></div>
+    <div class="stat"><span class="label" data-i18n="hud.best">Rekord</span><span id="hud-best" class="value">0</span></div>
+    <div class="stat next"><span class="label" data-i18n="hud.next">Nästa</span><canvas id="hud-next" width="44" height="36" aria-hidden="true"></canvas></div>
+    <div class="hud-btns">
+      <button id="btn-mute" class="icon-btn" aria-label="Ljud av">🔊</button>
+      <button id="btn-menu" class="icon-btn" data-i18n-aria="aria.menu" aria-label="Meny">☰</button>
+    </div>
+  </div>
+</div>
+
+<!-- the three buttons -->
+<div id="pad" class="pad" hidden>
+  <button id="btn-x" class="pad-btn" data-i18n-aria="aria.x" aria-label="Flytta krattan i sidled">▶</button>
+  <button id="btn-drop" class="pad-btn drop" data-i18n="btn.drop">Släpp</button>
+  <button id="btn-y" class="pad-btn" data-i18n-aria="aria.y" aria-label="Flytta krattan framåt">▼</button>
+</div>
+
+<!-- Menu -->
+<div id="menu" class="overlay">
+  <div class="panel">
+    <div class="lang" role="group" aria-label="Språk">
+      <button data-lang="sv" aria-pressed="true">SV</button>
+      <button data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <h1 data-i18n="app.name">Snigelkrattan</h1>
+    <p class="tagline" data-i18n="app.tagline">Du är trädgårdsmästaren. Krattan går bara åt ett håll per knapp, och lasten kryper.</p>
+    <p class="credit" data-i18n="app.credit">Spelidé: Katie Norling</p>
+    <div class="actions">
+      <button id="btn-continue" class="btn secondary" hidden data-i18n="menu.continue">Fortsätt spelet</button>
+      <button id="btn-start" class="btn primary" data-i18n="menu.start">Nytt spel</button>
+      <button id="btn-help" class="btn secondary" data-i18n="menu.help">Så spelar du</button>
+      <button id="btn-install" class="btn secondary" hidden data-i18n="menu.install">Installera app</button>
+    </div>
+    <p id="offline-hint" class="hint"></p>
+    <footer>
+      <span data-i18n="app.by">En <a href="https://knackpot.se" target="_blank" rel="noopener">Knackpot</a>-produkt</span>
+      · <a href="https://snails.se/" data-i18n="app.hub">Fler snigelspel på snails.se</a>
+      · <span id="menu-version"></span>
+    </footer>
+  </div>
+</div>
+
+<!-- Help -->
+<div id="help" class="overlay" hidden>
+  <div class="panel">
+    <h2 data-i18n="help.title">Så spelar du</h2>
+    <p data-i18n="help.1"></p>
+    <p data-i18n="help.2"></p>
+    <p data-i18n="help.3"></p>
+    <p data-i18n="help.4"></p>
+    <p data-i18n="help.5"></p>
+    <div class="actions"><button id="btn-help-close" class="btn primary" data-i18n="help.close">Stäng</button></div>
+  </div>
+</div>
+
+<!-- Game over -->
+<div id="over" class="overlay" hidden>
+  <div class="panel small">
+    <h2 data-i18n="over.title">Gräsmattan är full</h2>
+    <p id="over-why" class="why"></p>
+    <p id="over-score" class="score"></p>
+    <p id="over-best" class="best"></p>
+    <div class="actions">
+      <button id="btn-again" class="btn primary" data-i18n="over.again">Spela igen</button>
+      <button id="btn-over-menu" class="btn secondary" data-i18n="over.menu">Till menyn</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

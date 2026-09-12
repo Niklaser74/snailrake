@@ -1,0 +1,14 @@
+{
+  "name": "snailrake",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Snigelkrattan – trädgårdsmästaren sätter ner sniglar med en kratta som bara går åt ett håll per knapp. Likadana växer ihop, tre i stapel är slut. PWA utan byggsteg.",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node test/paths.test.mjs && node test/rules.test.mjs && node test/engine.test.mjs && node test/sw.test.mjs",
+    "sync:game": "node scripts/sync-game.mjs",
+    "icons": "node scripts/icons.mjs"
+  },
+  "license": "UNLICENSED"
+}
