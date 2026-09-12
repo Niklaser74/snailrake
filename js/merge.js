@@ -10,7 +10,7 @@ export const POP_TIME = 0.35;       // s a level-five pair takes to vanish
 export const MAX_MERGES_PER_STEP = 8;
 export const TOWER_LIMIT = 3;       // this deep is danger
 export const TOWER_GRACE = 3.0;     // s the top snail has to crawl off
-export const ESCAPE_FACTOR = 2.6;   // a snail on top of another is in a hurry; on the grass it is not.
+export const ESCAPE_FACTOR = 5.2;   // a snail on top of another is in a hurry; on the grass it is not.
                                     // ≈21 px/s for a small top, so it clears a big carrier just inside TOWER_GRACE
 
 export function depthOf(g, s) {

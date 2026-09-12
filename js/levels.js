@@ -18,11 +18,11 @@ export const PURPLE = '#a855f7';
 // has to fill faster than it tidies itself, or there is nothing to do.
 // The ladder ends on red on purpose: the level about to pop should pull the eye.
 export const LEVELS = [
-  { id: 1, color: hex.yellow, r: 12, thick: 9, scale: 0.45, speed: 8, score: 5 },
-  { id: 2, color: hex.green, r: 16, thick: 12, scale: 0.6, speed: 7, score: 15 },
-  { id: 3, color: hex.blue, r: 21, thick: 15, scale: 0.8, speed: 6, score: 40 },
-  { id: 4, color: PURPLE, r: 27, thick: 19, scale: 1.05, speed: 5, score: 100 },
-  { id: 5, color: hex.red, r: 34, thick: 24, scale: 1.35, speed: 4, score: 300 },
+  { id: 1, color: hex.yellow, r: 12, thick: 9, scale: 0.45, speed: 4, score: 5 },
+  { id: 2, color: hex.green, r: 16, thick: 12, scale: 0.6, speed: 3.5, score: 15 },
+  { id: 3, color: hex.blue, r: 21, thick: 15, scale: 0.8, speed: 3, score: 40 },
+  { id: 4, color: PURPLE, r: 27, thick: 19, scale: 1.05, speed: 2.5, score: 100 },
+  { id: 5, color: hex.red, r: 34, thick: 24, scale: 1.35, speed: 2, score: 300 },
 ];
 
 export const TOP_LEVEL = LEVELS.length - 1;
