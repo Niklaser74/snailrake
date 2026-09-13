@@ -16,7 +16,6 @@ test('five levels, strictly growing, slower as they grow', () => {
   assert.equal(TOP_LEVEL, 4);
   for (let i = 1; i < LEVELS.length; i++) {
     assert.ok(LEVELS[i].r > LEVELS[i - 1].r, `r grows at ${i}`);
-    assert.ok(LEVELS[i].thick > LEVELS[i - 1].thick, `thick grows at ${i}`);
     assert.ok(LEVELS[i].scale > LEVELS[i - 1].scale, `scale grows at ${i}`);
     assert.ok(LEVELS[i].speed < LEVELS[i - 1].speed, `speed drops at ${i}`);
     assert.ok(LEVELS[i].score > LEVELS[i - 1].score, `score grows at ${i}`);

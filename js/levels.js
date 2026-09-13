@@ -1,4 +1,4 @@
-// The five snail sizes. Colour is size: the player reads the lawn by hue alone,
+// The five snail sizes. Colour is size: the player reads the pile by hue alone,
 // so the five must stay far apart.
 //
 // TEAM_COLORS only has four. The fifth is the rake's own and is defined HERE,
@@ -12,17 +12,22 @@ const hex = Object.fromEntries(TEAM_COLORS.map((c) => [c.id, c.hex]));
 // into yellow, teal into blue, pink vanishes into the garden theme's flowers.
 export const PURPLE = '#a855f7';
 
-// r is collision truth, scale is only drawing (scale 1 ≈ 48 px wide snail),
-// thick is how tall the snail is when something rests on top of it.
-// speed is the crawl towards a match, px/s — snail pace on purpose: the lawn
-// has to fill faster than it tidies itself, or there is nothing to do.
+// r is collision truth (the circle the physics sees); scale is only drawing,
+// chosen so the drawn snail is about as wide as the circle (scale 1 ≈ 48 px).
+// speed is the crawl towards a match, px/s — snail pace on purpose: the pile
+// has to grow faster than it tidies itself, or there is nothing to do.
 // The ladder ends on red on purpose: the level about to pop should pull the eye.
+//
+// (LEVELS is a plain array so balancing scripts can tweak r in place.)
+// Sizes are big on purpose: with five levels a red is only sixteen yellows, so
+// the pops drain the pile fast. A board about 2.5 reds wide is what makes a
+// sloppy player lose in ~4 minutes (measured 2026-09-13, docs-vault).
 export const LEVELS = [
-  { id: 1, color: hex.yellow, r: 12, thick: 9, scale: 0.45, speed: 4, score: 5 },
-  { id: 2, color: hex.green, r: 16, thick: 12, scale: 0.6, speed: 3.5, score: 15 },
-  { id: 3, color: hex.blue, r: 21, thick: 15, scale: 0.8, speed: 3, score: 40 },
-  { id: 4, color: PURPLE, r: 27, thick: 19, scale: 1.05, speed: 2.5, score: 100 },
-  { id: 5, color: hex.red, r: 34, thick: 24, scale: 1.35, speed: 2, score: 300 },
+  { id: 1, color: hex.yellow, r: 22, scale: 0.92, speed: 4, score: 5 },
+  { id: 2, color: hex.green, r: 30, scale: 1.25, speed: 3.5, score: 15 },
+  { id: 3, color: hex.blue, r: 41, scale: 1.71, speed: 3, score: 40 },
+  { id: 4, color: PURPLE, r: 52, scale: 2.17, speed: 2.5, score: 100 },
+  { id: 5, color: hex.red, r: 67, scale: 2.8, speed: 2, score: 300 },
 ];
 
 export const TOP_LEVEL = LEVELS.length - 1;

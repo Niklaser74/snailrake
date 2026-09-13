@@ -1,156 +1,139 @@
-// Position-based physics for the lawn. No impulse solver, no rotation: the only
-// things that have to be true are that a snail ends up on top of another or
-// beside it, that nothing overlaps once everything has settled, and that the
-// whole thing is deterministic so test/engine.test.mjs can run it in Node.
-// Relaxation gives all three in eighty lines; a real solver adds jitter and
-// takes testability away.
+// Side-view physics for the pile, position-based (Suika-style). Snails are
+// circles; gravity points down the screen. Each step predicts a position,
+// projects out every overlap a few times, and reads the velocity back off the
+// correction. No impulses, no rotation: the only things that have to hold are
+// that snails pile up naturally, that a pile does not jitter, and that the
+// whole thing is deterministic so test/engine.test.mjs can run games in Node.
 
-export const G = 1400;          // px/s^2
-export const AIR = 0.985;       // horizontal drag while falling
-export const BOUNCE = 0.22;     // how much of the fall comes back off the grass
-export const BOUNCE_MIN = 260;  // px/s below which it just settles
-export const OVERLAP_ON = 0.55; // share of (ri+rj) within which a *falling* snail lands ON instead of beside
-export const SLIDE_PUSH = 120;  // px/s outward shove when it catches the rim
-export const CLIMB = 60;        // px/s a crawling snail climbs onto another
-export const SEP_ITERS = 3;
-export const LAYER = 0.6;       // share of the thinner snail's height that counts as "same layer"
+export const G = 1500;            // px/s^2
+export const AIR = 0.995;         // velocity kept per step while airborne
+export const FRICTION = 0.80;     // horizontal velocity kept per step while touching something
+export const BOUNCE = 0.18;       // share of the fall that comes back up
+export const BOUNCE_MIN = 240;    // px/s below which it just lands
+export const SEP_ITERS = 6;
+export const SUPPORT_NY = 0.35;   // contact normal must point this much upward to count as "resting on"
+export const REST_V = 10;         // px/s; slower than this while supported is "at rest"
+export const CONTACT_SLOP = 0.6;  // px of overlap tolerated before a contact counts
+export const MAX_V = 700;         // px/s; a newborn bigger snail gets shoved out of its neighbours in one step,
+                                  // and read back as velocity that would launch it off the board
 
-// The highest snail we could be resting on: circles overlap, and its top is not
-// so high above us that we would have to be lifted onto it.
-export function supportUnder(g, s) {
-  let best = null;
-  let bz = -Infinity;
-  for (const o of g.snails) {
-    if (o === s || o.dead || o.state === 'held' || o.state === 'falling' || o.state === 'popping') continue;
-    if (Math.hypot(s.x - o.x, s.y - o.y) > s.r + o.r) continue;
-    const top = o.z + o.thick;
-    if (top > s.z + s.thick + 1) continue;     // it towers over us; we are beside it, not on it
-    if (carries(g, s, o)) continue;            // never rest on something resting on us
-    if (s.state !== 'falling' && climber(s, o) !== s) continue; // of two on the ground, only one climbs
-    if (top > bz || (top === bz && best && o.id < best.id)) { best = o; bz = top; }
-  }
-  return best;
+// Is this snail moved by the solver at all?
+export function isFree(s) {
+  return !s.dead && s.state !== 'held' && s.state !== 'climbing' && s.state !== 'popping';
 }
 
-// Two grounded snails that overlap: which one climbs on to the other? The one
-// that is crawling towards the other; if both are (or neither is), the younger.
-// Without this they raise each other's floor and rise forever.
-function climber(a, b) {
-  const at = a.target === b.id;
-  const bt = b.target === a.id;
-  if (at && !bt) return a;
-  if (bt && !at) return b;
-  return a.id > b.id ? a : b;
+// Predict: gravity plus whatever velocity it had.
+export function integrate(s, dt) {
+  s.px = s.x;
+  s.py = s.y;
+  s.vy += G * dt;
+  s.x += s.vx * dt;
+  s.y += s.vy * dt;
 }
 
-// Is `o` somewhere in the stack that `s` is holding up? Guards against cycles.
-function carries(g, s, o) {
-  let cur = o;
-  for (let i = 0; i < 16 && cur; i++) {
-    if (cur.on == null) return false;
-    if (cur.on === s.id) return true;
-    cur = g.byId(cur.on);
-  }
-  return false;
-}
-
-export function fall(s, h) {
-  s.vz -= G * h;
-  s.z += s.vz * h;
-  s.x += s.vx * h;
-  s.y += s.vy * h;
-  s.vx *= AIR;
-  s.vy *= AIR;
-}
-
-// Landing, stacking and sliding off a rim are one rule read three ways.
-// `onStack(s, carrier)` is called the moment a snail comes to rest directly on
-// another — the single place in the codebase where a merge can start.
-export function resolveSupport(g, s, h, onStack) {
-  if (s.dead || s.state === 'held' || s.state === 'popping') return;
-  const carrier = supportUnder(g, s);
-  const floor = carrier ? carrier.z + carrier.thick : 0;
-
-  if (s.state === 'falling') {
-    if (s.z > floor) return;                                   // still in the air
-    if (!carrier) {
-      s.z = 0;
-      s.on = null;
-      if (s.vz < -BOUNCE_MIN) { s.vz = -s.vz * BOUNCE; g.events.push({ type: 'land', level: s.level, hard: true }); return; }
-      settle(g, s);
-      return;
-    }
-    const dx = s.x - carrier.x;
-    const dy = s.y - carrier.y;
-    const dist = Math.hypot(dx, dy) || 0.001;
-    if (dist <= OVERLAP_ON * (s.r + carrier.r)) {
-      s.z = floor;
-      s.on = carrier.id;
-      settle(g, s);
-      onStack(s, carrier);
-    } else {
-      // caught the rim: shoved outward, keeps falling, lands beside it or on the next neighbour
-      s.vx += (dx / dist) * SLIDE_PUSH;
-      s.vy += (dy / dist) * SLIDE_PUSH;
-      s.vz = -60;
-      s.on = null;
-      g.events.push({ type: 'slip', level: s.level });
-    }
-    return;
-  }
-
-  // Grounded. Follow the floor: climb onto what we crawled into, drop when the
-  // thing under us is gone.
-  if (s.z > floor + 0.5) { s.state = 'falling'; s.vz = 0; s.on = null; return; }
-  if (s.z < floor) {
-    s.z = Math.min(floor, s.z + CLIMB * h);
-    if (s.z < floor) { s.on = null; return; }
-  }
-  s.z = floor;
-  const was = s.on;
-  s.on = carrier ? carrier.id : null;
-  if (carrier && was !== carrier.id) onStack(s, carrier);
-}
-
-function settle(g, s) {
-  s.state = 'settling';
-  s.vz = 0;
-  s.vx *= 0.25;
-  s.vy *= 0.25;
-  s.restT = 0;
-  g.events.push({ type: 'land', level: s.level, hard: false });
-}
-
-export function separate(g, iters = SEP_ITERS) {
+// Push every overlapping pair apart, the lighter one further. Walls and the
+// floor are hard. A few passes are enough: the pile is never more than ~40.
+export function solve(g, iters = SEP_ITERS) {
   const list = g.snails;
   for (let k = 0; k < iters; k++) {
     for (let i = 0; i < list.length; i++) {
       const a = list[i];
-      if (a.dead || a.state === 'held' || a.state === 'popping') continue;
+      if (!isFree(a)) continue;
       for (let j = i + 1; j < list.length; j++) {
         const b = list[j];
-        if (b.dead || b.state === 'held' || b.state === 'popping') continue;
-        if (a.on === b.id || b.on === a.id) continue;            // carrier and passenger are meant to overlap
-        if (a.target === b.id || b.target === a.id) continue;    // it is climbing on to merge; let it through
-        if (Math.abs(a.z - b.z) > Math.min(a.thick, b.thick) * LAYER) continue;
+        if (!isFree(b)) continue;
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.hypot(dx, dy) || 0.001;
         const pen = a.r + b.r - d;
         if (pen <= 0) continue;
-        const px = (dx / d) * pen * 0.3;
-        const py = (dy / d) * pen * 0.3;
-        a.x -= px; a.y -= py;
-        b.x += px; b.y += py;
+        const ma = a.r * a.r;
+        const mb = b.r * b.r;
+        const wa = mb / (ma + mb);
+        const wb = ma / (ma + mb);
+        const nx = dx / d;
+        const ny = dy / d;
+        a.x -= nx * pen * wa; a.y -= ny * pen * wa;
+        b.x += nx * pen * wb; b.y += ny * pen * wb;
       }
+      bounds(g, a);
     }
   }
+  for (const s of list) if (isFree(s)) bounds(g, s); // the last pair push may have left one in a wall
 }
 
-export function clampWalls(g) {
-  for (const s of g.snails) {
-    if (s.state === 'held') continue;
-    s.x = Math.max(s.r, Math.min(g.w - s.r, s.x));
-    s.y = Math.max(s.r, Math.min(g.d - s.r, s.y));
+function bounds(g, s) {
+  if (s.x < s.r) s.x = s.r;
+  if (s.x > g.w - s.r) s.x = g.w - s.r;
+  if (s.y > g.h - s.r) s.y = g.h - s.r;
+}
+
+// Velocity is whatever the corrected position says it is. Contacts damp it.
+export function finish(g, s, dt) {
+  const fellAt = s.vy;
+  s.vx = (s.x - s.px) / dt;
+  s.vy = (s.y - s.py) / dt;
+  const v = Math.hypot(s.vx, s.vy);
+  if (v > MAX_V) { s.vx *= MAX_V / v; s.vy *= MAX_V / v; }
+  const touching = onFloor(g, s) || contacts(g, s).length > 0;
+  if (touching) {
+    s.vx *= FRICTION;
+    if (fellAt > BOUNCE_MIN && s.vy < fellAt * 0.5) { // hit something hard
+      s.vy = -fellAt * BOUNCE;
+      g.events.push({ type: 'land', level: s.level, hard: true });
+    }
+  } else {
+    s.vx *= AIR;
+    s.vy *= AIR;
   }
+  if (Math.abs(s.vx) < 0.5) s.vx = 0;
+}
+
+export function onFloor(g, s) { return s.y + s.r >= g.h - CONTACT_SLOP; }
+
+export function contacts(g, s) {
+  const out = [];
+  for (const o of g.snails) {
+    if (o === s || o.dead || o.state === 'held' || o.state === 'popping') continue;
+    const d = Math.hypot(o.x - s.x, o.y - s.y);
+    if (d <= s.r + o.r + CONTACT_SLOP) out.push(o);
+  }
+  return out;
+}
+
+// What holds this snail up: the floor (null) or the contact whose normal points
+// most upward. Undefined means nothing does — it is in the air.
+export function supportOf(g, s) {
+  if (onFloor(g, s)) return null;
+  let best;
+  let bny = SUPPORT_NY;
+  for (const o of contacts(g, s)) {
+    const d = Math.hypot(o.x - s.x, o.y - s.y) || 0.001;
+    const ny = (o.y - s.y) / d;
+    if (ny > bny || (ny === bny && best && o.id < best.id)) { bny = ny; best = o; }
+  }
+  return best;
+}
+
+// Who holds whom, recomputed from the geometry every step. Fires `onStack`
+// the moment a snail comes to rest on a new carrier — the single place in the
+// codebase a merge can start.
+export function resolveSupport(g, s, dt, onStack) {
+  if (!isFree(s)) return;
+  const sup = supportOf(g, s);
+  if (sup === undefined) {
+    if (s.state !== 'falling') { s.state = 'falling'; s.restT = 0; }
+    s.on = null;
+    return;
+  }
+  const speed = Math.hypot(s.vx, s.vy);
+  if (s.state === 'falling') {
+    if (speed > REST_V) return;
+    s.state = 'settling';
+    s.restT = 0;
+    g.events.push({ type: 'land', level: s.level, hard: false });
+  }
+  const was = s.on;
+  s.on = sup ? sup.id : null;
+  if (sup && was !== sup.id) onStack(s, sup);
 }

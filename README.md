@@ -1,14 +1,15 @@
 # Snigelkrattan / Snail Rake
 
-Du är trädgårdsmästaren. Nästa snigel sitter på krattan. Håll ▶ för att köra
-krattan i sidled, ▼ för att köra framåt — den går bara åt ett håll, och åker
-tillbaka till hörnet efter varje snigel. Släpp sätter ner snigeln där krattan
-är. Dröjer du för länge kryper den av själv.
+Du är trädgårdsmästaren. Krattan hänger över högen med nästa snigel. Håll ◀
+eller ▶ för att köra den i sidled, Släpp låter snigeln falla — den studsar,
+rullar, eller hamnar ovanpå en annan. Dröjer du för länge kryper den av själv.
 
-Sniglarna landar med fysik, kryper sakta mot närmaste snigel i samma färg och
-klättrar upp på den: gul → grön → blå → lila → röd. Två röda försvinner och
-ger mest poäng. Tre på varandra utan match i tre sekunder är slut — men den
-översta försöker krypa av, så små sniglar klarar sig och stora sällan.
+Landar en snigel rakt på en i samma färg blir de en större: gul → grön → blå
+→ lila → röd. Två röda försvinner och ger mest poäng. Sniglar i högen kryper
+också sakta mot närmaste likadana granne och klättrar upp på den. Högen får
+inte nå linjen: ligger en snigel stilla ovanför den i några sekunder är det
+slut — men den försöker krypa ner mot en lägre del av högen, så små sniglar
+klarar sig och stora sällan.
 
 **Spelidé: Katie Norling.** Tredje spelet i [snigelserien](https://snails.se)
 från Knackpot. Live på [snails.se/snailrake/](https://snails.se/snailrake/).
@@ -28,13 +29,13 @@ deployas till GitHub Pages vid push till `main`.
 ## Struktur
 
 ```
-index.html            enda sidan: gräsmattan, HUD, tre knappar, meny, hjälp, game over
+index.html            enda sidan: högen, HUD, tre knappar, meny, hjälp, game over
 js/engine.js          spelets tillstånd och fasta tidssteg — körs i Node, inget DOM
-js/physics.js         landning, stapling, glid-av, separation
-js/merge.js           krypning, matchning, torn och räddning
+js/physics.js         positionsbaserad cirkelfysik: gravitation, stöd, friktion, väggar
+js/merge.js           krypning, klättring, matchning, topplinjen och räddningen
 js/rake.js            krattan
 js/levels.js          fem nivåer
-js/view.js            snedvyn på canvas
+js/view.js            sidovyn på canvas
 js/input.js           knappar och tangentbord
 js/main.js            meny, loop, spara, ljud, PWA
 js/game/              kopior från snailmageddon: snigelritare, palett, ljud, RNG
@@ -43,12 +44,17 @@ test/                 paths, rules, engine, sw
 
 ## Så hänger det ihop
 
-Ett spelvarv är fyra saker i fast ordning (`engine.js` → `step`): krattan,
-fallet, stödet (landa på gräset, på en annan snigel, eller glida av en kant),
-krypningen, separationen, väggarna, tornklockan. Matchning sker på exakt ett
-ställe — när en snigel kommer till vila direkt på en likadan. Bara toppen i en
-stapel kryper; den som bär någon är frusen. Det gör räddningen läsbar och
-motorn testbar.
+Ett spelvarv (`engine.js` → `step`) är: krattan, krypningen (kinematisk),
+fysiken (förutsäg, lös överlapp några varv, läs tillbaka hastigheten — som
+Suika), stödet (vem vilar på vem), topplinjen. Matchning sker på exakt ett
+ställe — när en snigel kommer till vila direkt på en likadan, oavsett om den
+föll dit eller klättrade. Bara ytan kryper; den som bär någon är frusen. Det
+gör räddningen läsbar och motorn testbar.
+
+Balansen ligger i konstanter överst i `rake.js`, `merge.js`, `physics.js`,
+`levels.js` och `engine.js`. Sniglarna är stora med flit: med fem nivåer är en
+röd bara sexton gula, så popparna dränerar högen fort — brädet är ~2,5 röda
+brett för att en slarvig spelare ska förlora på några minuter.
 
 ## Sökvägar och origin
 
@@ -58,6 +64,6 @@ relativa sökvägar, egen cache-prefix (`snailrake-`), egna `localStorage`-nyckl
 
 ## Nästa steg
 
-- Speltesta på telefon och sätt tempot (krattans fart, tålamodet, nådetiden).
+- Speltesta på telefon och sätt tempot (krattans fart, tålamodet, nådetiden, krypet).
 - Leaderboard i Supabase `snails` (prefix `snailrake_`), delade konton med de andra spelen.
 - Trädgårdsmästaren som figur vid krattan.

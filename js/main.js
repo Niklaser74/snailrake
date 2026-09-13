@@ -59,7 +59,7 @@ addEventListener('keydown', (e) => {
 // ---------- game ----------
 function newGame() {
   garden = new Garden({ seed: (Date.now() ^ (Math.random() * 0xffffffff)) | 0 });
-  view.setWorld(garden.w, garden.d, garden.seed);
+  view.setWorld(garden.w, garden.h, garden.seed);
   view.particles = [];
   running = true;
   store.del('game');
@@ -70,7 +70,7 @@ function resumeGame() {
   const saved = store.get('game', null);
   if (!saved) { newGame(); return; }
   try { garden = Garden.fromJSON(saved); } catch { newGame(); return; }
-  view.setWorld(garden.w, garden.d, garden.seed);
+  view.setWorld(garden.w, garden.h, garden.seed);
   running = !garden.over;
   $('hud').hidden = false;
   $('pad').hidden = false;
@@ -86,17 +86,16 @@ function handleEvents() {
     switch (e.type) {
       case 'drop': sfx.tick(); if (e.slipped) sfx.tickLow(); break;
       case 'land': if (e.hard) sfx.bounce(); break;
-      case 'slip': sfx.tickLow(); break;
       case 'merge':
         sfx.crate();
-        view.burst(e.x, e.y, e.z + 8, LEVELS[e.level].color, 10 + e.level * 3, 90 + e.level * 25);
-        view.floatText(e.x, e.y, e.z + 30, '+' + e.score, LEVELS[e.level].color);
+        view.burst(e.x, e.y, LEVELS[e.level].color, 10 + e.level * 3, 90 + e.level * 25);
+        view.floatText(e.x, e.y - 22, '+' + e.score, LEVELS[e.level].color);
         break;
       case 'pop':
         sfx.win();
-        view.burst(e.x, e.y, e.z + 10, LEVELS[e.level].color, 34, 220);
-        view.burst(e.x, e.y, e.z + 10, '#fff', 12, 160);
-        view.floatText(e.x, e.y, e.z + 40, '+' + e.score, '#fff');
+        view.burst(e.x, e.y, LEVELS[e.level].color, 34, 220);
+        view.burst(e.x, e.y, '#fff', 12, 160);
+        view.floatText(e.x, e.y - 30, '+' + e.score, '#fff');
         break;
       case 'over': gameOver(e.reason); break;
       default: break;
@@ -119,7 +118,7 @@ function gameOver(reason) {
 }
 
 // ---------- input ----------
-const input = bindInput({ x: $('btn-x'), y: $('btn-y'), drop: $('btn-drop') }, {
+const input = bindInput({ left: $('btn-left'), right: $('btn-right'), drop: $('btn-drop') }, {
   axis(axis, on) { if (garden && running && !paused()) garden.rake.held[axis] = on; else if (garden) garden.rake.held[axis] = false; },
   drop() { if (garden && running && !paused()) { garden.drop(); if (navigator.vibrate) navigator.vibrate(8); } },
 });

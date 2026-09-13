@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#6cc25a">
-<meta name="description" content="Snigelkrattan – du är trädgårdsmästaren. Sätt ner sniglar med en kratta som bara går åt ett håll per knapp; likadana växer ihop, tre på varandra är slut. Snail Rake: a merge game with snails.">
+<meta name="description" content="Snigelkrattan – du är trädgårdsmästaren. Släpp sniglar från krattan; likadana växer ihop, och högen får inte nå toppen. Snail Rake: a merge game with snails.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Snail Rake">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="snails.se">
 <meta property="og:title" content="Snail Rake – a merge game with snails">
-<meta property="og:description" content="Krattan går bara åt ett håll per knapp, och lasten kryper. / The rake only goes one way per button, and the cargo crawls.">
+<meta property="og:description" content="Släpp sniglar från krattan, likadana växer ihop, och lasten kryper. / Drop snails from the rake, matches grow together, and the cargo crawls.">
 <meta property="og:image" content="https://snails.se/snailrake/icons/icon-512.png">
 <meta property="og:url" content="https://snails.se/snailrake/">
 <link rel="canonical" href="https://snails.se/snailrake/">
@@ -23,7 +23,7 @@
 </head>
 <body>
 <div id="stage">
-  <canvas id="lawn" aria-label="Gräsmattan"></canvas>
+  <canvas id="lawn" aria-label="Högen"></canvas>
 </div>
 
 <!-- HUD -->
@@ -41,9 +41,9 @@
 
 <!-- the three buttons -->
 <div id="pad" class="pad" hidden>
-  <button id="btn-x" class="pad-btn" data-i18n-aria="aria.x" aria-label="Flytta krattan i sidled">▶</button>
+  <button id="btn-left" class="pad-btn" data-i18n-aria="aria.left" aria-label="Flytta krattan åt vänster">◀</button>
   <button id="btn-drop" class="pad-btn drop" data-i18n="btn.drop">Släpp</button>
-  <button id="btn-y" class="pad-btn" data-i18n-aria="aria.y" aria-label="Flytta krattan framåt">▼</button>
+  <button id="btn-right" class="pad-btn" data-i18n-aria="aria.right" aria-label="Flytta krattan åt höger">▶</button>
 </div>
 
 <!-- Menu -->
@@ -54,7 +54,7 @@
       <button data-lang="en" aria-pressed="false">EN</button>
     </div>
     <h1 data-i18n="app.name">Snigelkrattan</h1>
-    <p class="tagline" data-i18n="app.tagline">Du är trädgårdsmästaren. Krattan går bara åt ett håll per knapp, och lasten kryper.</p>
+    <p class="tagline" data-i18n="app.tagline">Du är trädgårdsmästaren. Släpp sniglar från krattan; likadana växer ihop, och högen får inte nå toppen.</p>
     <p class="credit" data-i18n="app.credit">Spelidé: Katie Norling</p>
     <div class="actions">
       <button id="btn-continue" class="btn secondary" hidden data-i18n="menu.continue">Fortsätt spelet</button>
@@ -87,7 +87,7 @@
 <!-- Game over -->
 <div id="over" class="overlay" hidden>
   <div class="panel small">
-    <h2 data-i18n="over.title">Gräsmattan är full</h2>
+    <h2 data-i18n="over.title">Högen nådde toppen</h2>
     <p id="over-why" class="why"></p>
     <p id="over-score" class="score"></p>
     <p id="over-best" class="best"></p>
