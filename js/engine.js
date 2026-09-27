@@ -17,12 +17,17 @@ export const WORLD_H = 560;
 export const SPAWN_MIX = [0.6, 0.28, 0.12]; // share of new snails arriving as level one, two, three
 
 export class Garden {
-  constructor({ w = WORLD_W, h = WORLD_H, seed = (Date.now() | 0), rake = true, crawlGap = CRAWL_GAP } = {}) {
+  constructor({ w = WORLD_W, h = WORLD_H, seed = (Date.now() | 0), rake = true, crawlGap = CRAWL_GAP, timeLimit = 0 } = {}) {
     this.w = w;
     this.h = h;
     this.crawlGap = crawlGap;        // overridable so balancing scripts can measure the pile with and without crawling
     this.seed = seed;
-    this.rng = mulberry32(seed);
+    // Counted, so a restored game can wind the generator forward and keep the
+    // same snail sequence as everyone else on the same seed (tournaments).
+    const base = mulberry32(seed);
+    this.rngCalls = 0;
+    this.rng = () => { this.rngCalls++; return base(); };
+    this.timeLimit = timeLimit;      // seconds; 0 = no clock (the normal game)
     this.snails = [];
     this.nextId = 1;
     this.score = 0;
@@ -87,6 +92,11 @@ export class Garden {
     reap(this, dt);
     refreshCarrying(this);
     checkTopLine(this, dt);
+    if (this.timeLimit && !this.over && this.time >= this.timeLimit) {
+      this.over = true;
+      this.overReason = 'time';
+      this.events.push({ type: 'over', reason: 'time' });
+    }
   }
 
   drop() { this.rake.drop(); this.drops++; }
@@ -107,8 +117,8 @@ export class Garden {
   // Save/restore: the live state, not a history — it is a real-time game.
   toJSON() {
     return {
-      v: 2, seed: this.seed, w: this.w, h: this.h, score: this.score, time: this.time, drops: this.drops,
-      nextId: this.nextId, next: this.next, over: this.over, dangerT: this.dangerT,
+      v: 2, seed: this.seed, rngCalls: this.rngCalls, timeLimit: this.timeLimit, w: this.w, h: this.h, score: this.score, time: this.time, drops: this.drops,
+      nextId: this.nextId, next: this.next, over: this.over, overReason: this.overReason, dangerT: this.dangerT,
       rake: { x: this.rake.x, state: this.rake.state, t: this.rake.t, snail: this.rake.snail ? this.rake.snail.id : null },
       snails: this.snails.map((s) => ({ ...s })),
     };
@@ -116,9 +126,10 @@ export class Garden {
 
   static fromJSON(o) {
     if (o.v !== 2) throw new Error('old save');
-    const g = new Garden({ w: o.w, h: o.h, seed: o.seed });
+    const g = new Garden({ w: o.w, h: o.h, seed: o.seed, timeLimit: o.timeLimit || 0 });
+    while (g.rngCalls < (o.rngCalls || 0)) g.rng();
     g.score = o.score; g.time = o.time; g.drops = o.drops || 0; g.nextId = o.nextId; g.next = o.next;
-    g.over = o.over; g.dangerT = o.dangerT || 0;
+    g.over = o.over; g.overReason = o.overReason ?? null; g.dangerT = o.dangerT || 0;
     g.snails = o.snails.map((s) => ({ ...s }));
     g.rake.x = o.rake.x; g.rake.state = o.rake.state; g.rake.t = o.rake.t;
     g.rake.snail = o.rake.snail != null ? g.byId(o.rake.snail) : null;

@@ -154,4 +154,31 @@ test('save and restore round-trips', () => {
   assert.equal(copy.hash(), g.hash(), 'and they keep in step');
 });
 
+test('a time limit ends the game once, with reason time', () => {
+  const g = new Garden({ seed: 5, timeLimit: 2 });
+  run(g, 1.9);
+  assert.equal(g.over, false);
+  run(g, 0.2);
+  assert.equal(g.over, true);
+  assert.equal(g.overReason, 'time');
+  const overs = g.takeEvents().filter((e) => e.type === 'over');
+  assert.equal(overs.length, 1);
+  run(g, 1);
+  assert.equal(g.takeEvents().filter((e) => e.type === 'over').length, 0);
+});
+
+test('a restored game keeps the snail sequence of its seed', () => {
+  function play(g, drops) {
+    for (let d = 0; d < drops; d++) { runUntil(g, (x) => x.rake.state === 'ready', 5); g.drop(); run(g, 0.8); }
+  }
+  const a = new Garden({ seed: 77, timeLimit: 180 });
+  const b = new Garden({ seed: 77, timeLimit: 180 });
+  play(a, 6); play(b, 6);
+  const c = Garden.fromJSON(JSON.parse(JSON.stringify(b.toJSON())));
+  assert.equal(c.timeLimit, 180);
+  assert.equal(c.rngCalls, a.rngCalls);
+  play(a, 8); play(c, 8);
+  assert.equal(c.hash(), a.hash(), 'the restored copy dealt the same snails');
+});
+
 if (failed) { console.log(`${failed} failed`); process.exit(1); }

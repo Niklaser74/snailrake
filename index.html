@@ -31,6 +31,7 @@
   <div class="hud-top">
     <div class="stat"><span class="label" data-i18n="hud.score">Poäng</span><span id="hud-score" class="value">0</span></div>
     <div class="stat"><span class="label" data-i18n="hud.best">Rekord</span><span id="hud-best" class="value">0</span></div>
+    <div id="hud-time-stat" class="stat time" hidden><span class="label" data-i18n="hud.time">Tid</span><span id="hud-time" class="value">3:00</span></div>
     <div class="stat next"><span class="label" data-i18n="hud.next">Nästa</span><canvas id="hud-next" width="44" height="36" aria-hidden="true"></canvas></div>
     <div class="hud-btns">
       <button id="btn-mute" class="icon-btn" aria-label="Ljud av">🔊</button>
@@ -59,6 +60,8 @@
     <div class="actions">
       <button id="btn-continue" class="btn secondary" hidden data-i18n="menu.continue">Fortsätt spelet</button>
       <button id="btn-start" class="btn primary" data-i18n="menu.start">Nytt spel</button>
+      <button id="btn-tourney" class="btn secondary" data-i18n="menu.tourney">Turnering</button>
+      <button id="btn-board" class="btn secondary" data-i18n="menu.board">Topplista</button>
       <button id="btn-help" class="btn secondary" data-i18n="menu.help">Så spelar du</button>
       <button id="btn-install" class="btn secondary" hidden data-i18n="menu.install">Installera app</button>
     </div>
@@ -84,15 +87,90 @@
   </div>
 </div>
 
+<!-- Leaderboard -->
+<div id="board" class="overlay" hidden>
+  <div class="panel">
+    <h2 data-i18n="board.title">Topplista</h2>
+    <div class="tabs" role="group">
+      <button data-period="week" aria-pressed="true" data-i18n="board.week">Veckan</button>
+      <button data-period="all" aria-pressed="false" data-i18n="board.all">Alltid</button>
+    </div>
+    <ol id="board-list" class="board"></ol>
+    <p id="board-me" class="me-line"></p>
+    <form class="name-row" data-name-form>
+      <label><span data-i18n="name.label">Ditt namn på listorna</span>
+        <input name="name" maxlength="24" autocomplete="nickname" enterkeyhint="done"></label>
+      <button class="btn secondary" data-i18n="name.save">Spara</button>
+    </form>
+    <p id="board-status" class="hint"></p>
+    <div class="actions"><button id="btn-board-close" class="btn primary" data-i18n="help.close">Stäng</button></div>
+  </div>
+</div>
+
+<!-- Tournament: create or join -->
+<div id="tourney" class="overlay" hidden>
+  <div class="panel">
+    <h2 data-i18n="tourney.title">Turnering</h2>
+    <p class="why" data-i18n="tourney.intro">Alla kör en runda lika länge, med samma sniglar i samma ordning. Ett försök var — flest poäng vinner.</p>
+    <h3 data-i18n="tourney.create">Starta en ny</h3>
+    <div id="t-durations" class="tabs" role="group"></div>
+    <button id="btn-t-create" class="btn primary" data-i18n="tourney.createBtn">Skapa turnering</button>
+    <h3 data-i18n="tourney.join">Gå med</h3>
+    <form id="t-join" class="join-row">
+      <input id="t-code" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" data-i18n-title="tourney.codeHint" aria-label="Kod">
+      <button class="btn secondary" data-i18n="tourney.joinBtn">Gå med</button>
+    </form>
+    <div id="t-mine-wrap" hidden>
+      <h3 data-i18n="tourney.mine">Dina turneringar</h3>
+      <ul id="t-mine" class="mine"></ul>
+    </div>
+    <p id="t-status" class="hint"></p>
+    <div class="actions"><button id="btn-t-close" class="btn secondary" data-i18n="help.close">Stäng</button></div>
+  </div>
+</div>
+
+<!-- Tournament lobby -->
+<div id="lobby" class="overlay" hidden>
+  <div class="panel">
+    <h2 data-i18n="tourney.title">Turnering</h2>
+    <div class="code-box">
+      <span class="label" data-i18n="tourney.code">Kod</span>
+      <span id="l-code" class="code"></span>
+      <span id="l-info" class="hint"></span>
+    </div>
+    <div class="actions"><button id="btn-l-share" class="btn secondary" data-i18n="tourney.share">Dela länken</button></div>
+    <ol id="l-list" class="board"></ol>
+    <p id="l-me" class="me-line"></p>
+    <form class="name-row" data-name-form id="l-name">
+      <label><span data-i18n="name.label">Ditt namn på listorna</span>
+        <input name="name" maxlength="24" autocomplete="nickname" enterkeyhint="done"></label>
+      <button class="btn secondary" data-i18n="name.save">Spara</button>
+    </form>
+    <p id="l-status" class="hint"></p>
+    <div class="actions">
+      <button id="btn-l-play" class="btn primary" data-i18n="tourney.play">Starta min runda</button>
+      <button id="btn-l-end" class="btn secondary" hidden data-i18n="tourney.end">Stäng turneringen</button>
+      <button id="btn-l-back" class="btn secondary" data-i18n="over.menu">Till menyn</button>
+    </div>
+  </div>
+</div>
+
 <!-- Game over -->
 <div id="over" class="overlay" hidden>
   <div class="panel small">
-    <h2 data-i18n="over.title">Högen nådde toppen</h2>
+    <h2 id="over-title">Högen nådde toppen</h2>
     <p id="over-why" class="why"></p>
     <p id="over-score" class="score"></p>
     <p id="over-best" class="best"></p>
+    <p id="over-rank" class="me-line"></p>
+    <form class="name-row" data-name-form id="over-name" hidden>
+      <label><span data-i18n="name.label">Ditt namn på listorna</span>
+        <input name="name" maxlength="24" autocomplete="nickname" enterkeyhint="done"></label>
+      <button class="btn secondary" data-i18n="name.save">Spara</button>
+    </form>
     <div class="actions">
       <button id="btn-again" class="btn primary" data-i18n="over.again">Spela igen</button>
+      <button id="btn-over-board" class="btn secondary" data-i18n="menu.board">Topplista</button>
       <button id="btn-over-menu" class="btn secondary" data-i18n="over.menu">Till menyn</button>
     </div>
   </div>
