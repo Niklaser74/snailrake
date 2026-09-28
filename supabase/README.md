@@ -18,9 +18,10 @@ snailmageddon-repots `supabase/README.md`.
 | `snailrake_daily_seeds` | Dagens högs frö per UTC-dygn, lottat första gången dagen efterfrågas |
 | `snailrake_daily` | en spelares runda på dagens hög, som `snailrake_entries` men nycklad på dag |
 | `snailrake_daily_get/start/progress` | Dagens hög: samma svar-form som turneringen, med `code` = `daily:<dag>`, topp 20 + egen `rank` och `total` |
+| `snailrake_daily_leader` | **den enda som är öppen för anon**: dagens ledares namn och poäng + antal spelare, för hubbens kort (som aldrig skapar konton) |
 | `snailrake_cleanup` + cron `snailrake_cleanup` (04:47) | turneringar efter 30 dagar, veckorader efter ett år, dagens hög efter 90 dagar |
 
-Allt är `security definer` med kontroll på `auth.uid()`; klienten når aldrig
+Allt är `security definer`, och allt utom `snailrake_daily_leader` kräver `auth.uid()`; klienten når aldrig
 tabellerna (RLS på, inga policyer, `revoke all`). Inga användar-id lämnar servern.
 
 ## Regler som servern håller
