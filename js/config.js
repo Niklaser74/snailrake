@@ -1,6 +1,6 @@
 // Bumped when the shipped files change, so the menu can show what is running.
 // Keep it in step with the sw.js cache version.
-export const APP_VERSION = 'v5';
+export const APP_VERSION = 'v6';
 
 // The series' Supabase project `snails` (shared by every game on snails.se).
 // The publishable key is public by design; the tables are only reachable

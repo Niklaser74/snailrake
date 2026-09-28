@@ -15,7 +15,10 @@ snailmageddon-repots `supabase/README.md`.
 | `snailrake_tourneys` | en turnering: kod (5 tecken utan 0/O/1/I/L), värd, rundlängd 60/120/180/300 s, frö, `open`/`closed` |
 | `snailrake_entries` | en deltagares runda: serverns `started_at`, poäng, `finished` |
 | `snailrake_tourney_create/get/start/progress/close/mine` | turneringens hela API |
-| `snailrake_cleanup` + cron `snailrake_cleanup` (04:47) | turneringar efter 30 dagar, veckorader efter ett år |
+| `snailrake_daily_seeds` | Dagens högs frö per UTC-dygn, lottat första gången dagen efterfrågas |
+| `snailrake_daily` | en spelares runda på dagens hög, som `snailrake_entries` men nycklad på dag |
+| `snailrake_daily_get/start/progress` | Dagens hög: samma svar-form som turneringen, med `code` = `daily:<dag>`, topp 20 + egen `rank` och `total` |
+| `snailrake_cleanup` + cron `snailrake_cleanup` (04:47) | turneringar efter 30 dagar, veckorader efter ett år, dagens hög efter 90 dagar |
 
 Allt är `security definer` med kontroll på `auth.uid()`; klienten når aldrig
 tabellerna (RLS på, inga policyer, `revoke all`). Inga användar-id lämnar servern.
@@ -30,6 +33,9 @@ tabellerna (RLS på, inga policyer, `revoke all`). Inga användar-id lämnar ser
   `started_at + rundlängd + 90 s`. Därefter står senast rapporterade poäng.
   Poängen går bara uppåt, och `p_final` låser raden.
 - **Fröt** visas bara för den som har startat — ingen kan öva på turneringens sniglar i förväg.
+  Dagens hög lottar sitt frö på servern, så morgondagens hög går inte att räkna ut.
+- **Dagens hög:** 180 s, ett försök per UTC-dygn, samma klocka och grace som turneringen.
+  `p_day` i progress är dagen rundan startade, så en runda över midnatt räknas till sin dag.
 - `RULES_VERSION` (js/config.js) måste vara 1; höj båda om reglerna ändras så att gamla poäng inte går att jämföra.
 
 ## Migrationer
@@ -41,5 +47,5 @@ snailmageddon-repot** utan att först lägga till de här filerna i dess histori
 
 ## Test
 
-`tests/snailrake.sql` körs med MCP `execute_sql`. Det rullar alltid tillbaka och
+`tests/snailrake.sql` och `tests/snailrake_daily.sql` körs med MCP `execute_sql`. Det rullar alltid tillbaka och
 slutar med felet `ALL OK (rolled back): …` när allt gick igenom.

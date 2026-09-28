@@ -1,4 +1,4 @@
-// The online half of Snigelkrattan: the global leaderboard and tournaments.
+// The online half of Snigelkrattan: the global leaderboard, tournaments and Dagens hög.
 // Thin wrappers around the snailrake_* functions in Supabase (see
 // supabase/migrations) plus the small pure helpers the page needs. The account
 // itself is the series' shared one (supa.js → account.js); nothing here runs
@@ -23,9 +23,15 @@ export function cleanName(s) {
   // eslint-disable-next-line no-control-regex
   return String(s ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24);
 }
-// The link to share: this page with ?t=CODE, so it works at any mount point.
+// Rounds are keyed by a string: a tournament code, or 'daily:YYYY-MM-DD' for
+// Dagens hög ('daily' alone before the server has said which day it is).
+export const isDaily = (key) => String(key).startsWith('daily');
+export const dayOf = (key) => (/^daily:(\d{4}-\d{2}-\d{2})$/.exec(key) || [])[1] || null;
+
+// The link to share: this page with ?t=CODE (or ?daily=1), so it works at any mount point.
 export function inviteLink(code, loc = globalThis.location) {
-  return `${loc.origin}${loc.pathname}?t=${encodeURIComponent(code)}`;
+  const q = isDaily(code) ? 'daily=1' : `t=${encodeURIComponent(code)}`;
+  return `${loc.origin}${loc.pathname}?${q}`;
 }
 export function clock(seconds) {
   const s = Math.max(0, Math.ceil(seconds));
@@ -94,5 +100,20 @@ export const net = {
     }, { keepalive: !!final }),
     close: (code) => online.rpc('snailrake_tourney_close', { p_code: code }),
     mine: () => online.rpc('snailrake_tourney_mine'),
+  },
+
+  daily: {
+    get: (day) => online.rpc('snailrake_daily_get', { p_day: day }),
+    start: (name) => online.rpc('snailrake_daily_start', { p_name: cleanName(name) }),
+    progress: (day, g, final) => online.rpc('snailrake_daily_progress', {
+      p_day: day, p_score: g.score, p_time: Math.min(g.time, g.timeLimit || g.time), p_drops: g.drops, p_final: !!final,
+    }, { keepalive: !!final }),
+  },
+
+  // One door for both kinds of timed round, keyed as above.
+  round: {
+    get: (key) => (isDaily(key) ? net.daily.get(dayOf(key)) : net.tourney.get(key)),
+    start: (key, name) => (isDaily(key) ? net.daily.start(name) : net.tourney.start(key, name)),
+    progress: (key, g, final) => (isDaily(key) ? net.daily.progress(dayOf(key), g, final) : net.tourney.progress(key, g, final)),
   },
 };

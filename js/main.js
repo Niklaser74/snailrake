@@ -4,10 +4,10 @@ import { Garden } from './engine.js';
 import { View } from './view.js';
 import { bindInput } from './input.js';
 import { LEVELS } from './levels.js';
-import { t, setLang, detectLang } from './i18n.js';
+import { t, setLang, detectLang, getLang } from './i18n.js';
 import { setMuted, isMuted, unlockAudio, sfx } from './game/audio.js';
 import { APP_VERSION } from './config.js';
-import { net, normCode, cleanName, inviteLink, clock, errorKey, DURATIONS, DEFAULT_DURATION, PROGRESS_EVERY, LOBBY_POLL } from './online.js';
+import { net, normCode, cleanName, inviteLink, clock, errorKey, isDaily, DURATIONS, DEFAULT_DURATION, PROGRESS_EVERY, LOBBY_POLL } from './online.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -21,7 +21,7 @@ document.querySelectorAll('[data-lang]').forEach((b) => b.addEventListener('clic
 
 let garden = null;
 let running = false;   // a game exists and is not over
-let tourney = null;    // { code, duration } while a tournament round is on the lawn
+let tourney = null;    // { code, duration } while a timed round is on the lawn: a tournament, or Dagens hög (code 'daily:<day>')
 let reportedAt = 0;    // game time of the last tournament progress report
 let best = store.get('best', 0);
 const view = new View($('lawn'));
@@ -128,7 +128,7 @@ function gameOver(reason) {
   $('over-title').textContent = t(reason === 'time' ? 'over.titleTime' : 'over.title');
   $('over-why').textContent = t('over.' + reason);
   $('over-score').textContent = t('over.score', { score: g.score });
-  $('btn-again').textContent = t(tourney ? 'over.toLobby' : 'over.again');
+  $('btn-again').textContent = t(!tourney ? 'over.again' : isDaily(tourney.code) ? 'over.toDaily' : 'over.toLobby');
   $('btn-over-board').hidden = !!tourney;
   $('over-rank').textContent = '';
   $('over-name').hidden = true;
@@ -137,8 +137,8 @@ function gameOver(reason) {
     $('over-best').textContent = '';
     $('over-best').classList.remove('new');
     const code = tourney.code;
-    net.tourney.progress(code, g, true)
-      .then((r) => { const p = placing(r); if (p && tourney?.code === code) $('over-rank').textContent = t('over.rankTourney', p); })
+    net.round.progress(code, g, true)
+      .then((r) => { const p = placing(r); if (p && tourney?.code === code) $('over-rank').textContent = t(isDaily(code) ? 'over.rankDaily' : 'over.rankTourney', p); })
       .catch((e) => { if (tourney?.code === code) $('over-rank').textContent = t(errorKey(e)); });
   } else {
     store.del('game');
@@ -261,6 +261,7 @@ async function openTourneyPanel() {
   } catch { /* the list is a convenience */ }
 }
 $('btn-tourney').addEventListener('click', openTourneyPanel);
+$('btn-daily').addEventListener('click', () => openLobby('daily'));
 $('btn-t-close').addEventListener('click', () => { $('tourney').hidden = true; });
 $('btn-t-create').addEventListener('click', async () => {
   $('t-status').textContent = t('board.loading');
@@ -283,7 +284,11 @@ let lobbyTimer = 0;
 function openLobby(code, data = null) {
   hideMenu();
   $('lobby').hidden = false;
-  $('l-code').textContent = code;
+  const daily = isDaily(code);
+  $('l-title').textContent = t(daily ? 'daily.title' : 'tourney.title');
+  $('l-code-label').textContent = t(daily ? 'daily.day' : 'tourney.code');
+  $('l-code').classList.toggle('day', daily);
+  $('l-code').textContent = daily ? '' : code;
   $('l-info').textContent = '';
   $('l-me').textContent = '';
   $('l-list').replaceChildren();
@@ -299,32 +304,40 @@ function openLobby(code, data = null) {
 }
 function closeLobby() { $('lobby').hidden = true; clearInterval(lobbyTimer); lobby = null; }
 async function refreshLobby() {
-  const code = lobby?.code;
-  if (!code) return;
+  const req = lobby;
+  if (!req?.code) return;
   try {
-    const r = await net.tourney.get(code);
-    if (lobby?.code !== code) return;
+    const r = await net.round.get(req.code);
+    if (lobby !== req) return;   // closed, or another answer got there first
     lobby = r;
     $('l-status').textContent = '';
     renderLobby();
   } catch (e) {
-    if (lobby?.code !== code) return;
+    if (lobby !== req) return;
+    if (errorKey(e) === 'err.noSuch' && localRound(req.code)) store.del('tgame');   // cleaned away on the server
     $('l-status').textContent = t(errorKey(e));
     if (!lobby.entries) $('btn-l-share').hidden = true;
   }
 }
 function placing(r) {
+  if (r.me?.rank) return { rank: r.me.rank, total: r.total };   // Dagens hög: only the top 20 come back
   const i = (r.entries || []).findIndex((e) => e.me);
   return i < 0 ? null : { rank: i + 1, total: r.entries.length };
 }
 function localRound(code) { const s = store.get('tgame', null); return s && s.code === code ? s : null; }
+function dayLabel(day) {
+  try { return new Date(day + 'T12:00:00Z').toLocaleDateString(getLang() === 'sv' ? 'sv-SE' : 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' }); } catch { return day; }
+}
 function renderLobby() {
   const r = lobby;
   const min = r.duration / 60;
-  $('btn-l-share').hidden = r.status !== 'open';
-  $('l-info').textContent = t(r.status === 'open' ? 'tourney.info' : 'tourney.infoClosed', { min, players: r.entries.length });
+  const daily = isDaily(r.code);
+  if (daily) $('l-code').textContent = dayLabel(r.day);
+  $('btn-l-share').hidden = r.status !== 'open' && !daily;
+  const players = daily ? r.total : r.entries.length;
+  $('l-info').textContent = t(daily ? 'daily.info' : r.status === 'open' ? 'tourney.info' : 'tourney.infoClosed', { min, players });
   renderList($('l-list'), r.entries.map((e) => ({ name: e.name, score: e.score, me: e.me, tag: e.state === 'playing' ? t('tourney.playing') : '' })));
-  if (!r.entries.length) $('l-status').textContent = t('tourney.empty');
+  if (!r.entries.length) $('l-status').textContent = t(daily ? 'daily.empty' : 'tourney.empty');
   const me = r.me;
   const local = localRound(r.code);
   let play = null;
@@ -337,7 +350,7 @@ function renderLobby() {
   } else if (!me.done) {
     $('l-me').textContent = t('tourney.elsewhere');
   } else {
-    $('l-me').textContent = t('tourney.meDone', { score: me.score, ...placing(r) });
+    $('l-me').textContent = t('tourney.meDone', { score: me.score, ...placing(r) }) + (daily ? ' ' + t('daily.tomorrow') : '');
     if (local) store.del('tgame');
   }
   $('btn-l-play').hidden = !play;
@@ -348,7 +361,8 @@ function renderLobby() {
 $('btn-l-back').addEventListener('click', () => { closeLobby(); showMenu(); });
 $('btn-l-share').addEventListener('click', async () => {
   const url = inviteLink(lobby.code);
-  const text = t('tourney.shareText', { code: lobby.code });
+  const text = !isDaily(lobby.code) ? t('tourney.shareText', { code: lobby.code })
+    : lobby.me?.done ? t('daily.shareScore', { score: lobby.me.score }) : t('daily.shareText');
   try {
     if (navigator.share) { await navigator.share({ title: t('app.name'), text, url }); return; }
   } catch (e) { if (e?.name === 'AbortError') return; }
@@ -376,8 +390,8 @@ $('btn-l-play').addEventListener('click', async () => {
   $('btn-l-play').disabled = true;
   $('l-status').textContent = t('board.loading');
   try {
-    const r = await net.tourney.start(code, playerName());
-    beginTourney(code, r.duration);
+    const r = await net.round.start(code, playerName());
+    beginTourney(r.code, r.duration);
     newGame({ seed: r.me.seed, timeLimit: r.duration });
     save();
   } catch (e) {
@@ -402,7 +416,7 @@ function leaveTourney() {
 function reportProgress() {
   if (!tourney || !running || garden.time - reportedAt < PROGRESS_EVERY) return;
   reportedAt = garden.time;
-  net.tourney.progress(tourney.code, garden, false).catch(() => { /* the next one, or the final, will do */ });
+  net.round.progress(tourney.code, garden, false).catch(() => { /* the next one, or the final, will do */ });
 }
 
 
@@ -461,10 +475,11 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 // for browser tests and debugging
 window.snailrake = { get garden() { return garden; }, get view() { return view; }, get running() { return running; }, newGame };
 
-// A shared ?t=CODE link opens that lobby; so does a round this device left unfinished.
-const linked = normCode(new URLSearchParams(location.search).get('t'));
-if (linked) {
-  const u = new URL(location.href); u.searchParams.delete('t'); history.replaceState(null, '', u);
+// A shared ?t=CODE (or ?daily=1) link opens that lobby; so does a round this device left unfinished.
+const params = new URLSearchParams(location.search);
+const linked = params.has('daily') ? 'daily' : normCode(params.get('t'));
+if (params.has('t') || params.has('daily')) {
+  const u = new URL(location.href); u.searchParams.delete('t'); u.searchParams.delete('daily'); history.replaceState(null, '', u);
 }
 const openRound = store.get('tgame', null);
 showMenu();

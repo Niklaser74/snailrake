@@ -2,22 +2,38 @@
   "id": "/snailrake/",
   "name": "Snail Rake",
   "short_name": "Snail Rake",
-  "description": "You are the gardener. Put snails down with a rake that only goes one way per button; matching snails grow together, three in a stack and it is over. A merge game with snails, offline, no account.",
+  "description": "You are the gardener. Drop snails from the rake; matching snails grow together and the pile must not reach the top. A merge game with snails: play offline, or take on the daily pile, tournaments and the leaderboard.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
   "background_color": "#6cc25a",
   "theme_color": "#6cc25a",
-  "categories": ["games", "entertainment"],
+  "categories": [
+    "games",
+    "entertainment"
+  ],
   "prefer_related_applications": false,
   "icons": [
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dagens hög / Daily pile",
+      "short_name": "Dagens hög",
+      "url": "./?daily=1",
+      "icons": [
+        { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
   ]
 }

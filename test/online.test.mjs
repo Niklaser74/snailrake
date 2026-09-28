@@ -2,7 +2,7 @@
 // the clock and error mapping. The server itself is tested in supabase/tests.
 //   node test/online.test.mjs
 import assert from 'node:assert/strict';
-import { normCode, cleanName, inviteLink, clock, errorKey, DURATIONS, DEFAULT_DURATION } from '../js/online.js';
+import { normCode, cleanName, inviteLink, clock, errorKey, isDaily, dayOf, DURATIONS, DEFAULT_DURATION } from '../js/online.js';
 
 let failed = 0;
 function test(name, fn) {
@@ -46,6 +46,15 @@ test('server errors map to known keys, the rest is the network', () => {
 test('durations match the server check', () => {
   assert.deepEqual(DURATIONS, [60, 120, 180, 300]);
   assert.ok(DURATIONS.includes(DEFAULT_DURATION));
+});
+
+test('Dagens hög: keys, the day and its link', () => {
+  assert.ok(isDaily('daily') && isDaily('daily:2026-09-28'));
+  assert.ok(!isDaily('ABC23'));
+  assert.equal(dayOf('daily:2026-09-28'), '2026-09-28');
+  assert.equal(dayOf('daily'), null, 'before the server has named the day: today');
+  const loc = { origin: 'https://snails.se', pathname: '/snailrake/' };
+  assert.equal(inviteLink('daily:2026-09-28', loc), 'https://snails.se/snailrake/?daily=1');
 });
 
 if (failed) { console.log(`${failed} failed`); process.exit(1); }

@@ -60,6 +60,7 @@
     <div class="actions">
       <button id="btn-continue" class="btn secondary" hidden data-i18n="menu.continue">Fortsätt spelet</button>
       <button id="btn-start" class="btn primary" data-i18n="menu.start">Nytt spel</button>
+      <button id="btn-daily" class="btn secondary" data-i18n="menu.daily">Dagens hög</button>
       <button id="btn-tourney" class="btn secondary" data-i18n="menu.tourney">Turnering</button>
       <button id="btn-board" class="btn secondary" data-i18n="menu.board">Topplista</button>
       <button id="btn-help" class="btn secondary" data-i18n="menu.help">Så spelar du</button>
@@ -129,12 +130,12 @@
   </div>
 </div>
 
-<!-- Tournament lobby -->
+<!-- Lobby: a tournament, or Dagens hög -->
 <div id="lobby" class="overlay" hidden>
   <div class="panel">
-    <h2 data-i18n="tourney.title">Turnering</h2>
+    <h2 id="l-title">Turnering</h2>
     <div class="code-box">
-      <span class="label" data-i18n="tourney.code">Kod</span>
+      <span id="l-code-label" class="label">Kod</span>
       <span id="l-code" class="code"></span>
       <span id="l-info" class="hint"></span>
     </div>

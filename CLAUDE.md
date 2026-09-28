@@ -59,7 +59,9 @@ test/           handrullade tester utan ramverk, node:assert
 
 ## Online
 
-- Topplista (vanligt spel, vecka/alltid) och turnering (kod/länk `?t=KOD`, 1–5 min, ett försök)
+- Topplista (vanligt spel, vecka/alltid), turnering (kod/länk `?t=KOD`, 1–5 min, ett försök) och
+  Dagens hög (`?daily=1`, samma frö för alla ett UTC-dygn, 3 min, ett försök). De två tidsrundorna delar
+  lobby och runtkod i `main.js`; nyckeln är turneringskoden eller `daily:<dag>` (`net.round` i `online.js`).
   går mot Supabase `snails`, se `supabase/README.md`. Migrationer appliceras med MCP `apply_migration`, aldrig `db push`.
 - Ändras poängsättning, radier eller tempo så att poängtakten ökar: kör `measure-rate.mjs` och se över
   taket i `snailrake_plausible`. Ändras reglerna så att gamla poäng inte är jämförbara: höj `RULES_VERSION` här och i SQL.
