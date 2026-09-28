@@ -475,14 +475,18 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 // for browser tests and debugging
 window.snailrake = { get garden() { return garden; }, get view() { return view; }, get running() { return running; }, newGame };
 
-// A shared ?t=CODE (or ?daily=1) link opens that lobby; so does a round this device left unfinished.
+// A shared ?t=CODE (or ?daily=1) link opens that lobby; so does a round this device left unfinished
+// (its clock is running). ?board=1 and ?tourney=1 open those panels — the hub's card links there.
+const LINK_PARAMS = ['t', 'daily', 'board', 'tourney'];
 const params = new URLSearchParams(location.search);
 const linked = params.has('daily') ? 'daily' : normCode(params.get('t'));
-if (params.has('t') || params.has('daily')) {
-  const u = new URL(location.href); u.searchParams.delete('t'); u.searchParams.delete('daily'); history.replaceState(null, '', u);
+if (LINK_PARAMS.some((p) => params.has(p))) {
+  const u = new URL(location.href); LINK_PARAMS.forEach((p) => u.searchParams.delete(p)); history.replaceState(null, '', u);
 }
 const openRound = store.get('tgame', null);
 showMenu();
 if (linked) openLobby(linked);
 else if (openRound?.code) openLobby(openRound.code);
+else if (params.has('board')) openBoard();
+else if (params.has('tourney')) openTourneyPanel();
 if (net.available() && net.signedIn()) net.flushPending();
