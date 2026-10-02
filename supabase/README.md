@@ -18,7 +18,7 @@ snailmageddon-repots `supabase/README.md`.
 | `snailrake_daily_seeds` | Dagens högs frö per UTC-dygn, lottat första gången dagen efterfrågas |
 | `snailrake_daily` | en spelares runda på dagens hög, som `snailrake_entries` men nycklad på dag |
 | `snailrake_daily_get/start/progress` | Dagens hög: samma svar-form som turneringen, med `code` = `daily:<dag>`, topp 20 + egen `rank` och `total` |
-| `snailrake_daily_leader`, `snailrake_week_top` | **de enda som är öppna för anon**: dagens ledare och veckans topp 3 (namn, poäng, antal spelare), för hubbens kort (som aldrig skapar konton) |
+| `snailrake_daily_leader`, `snailrake_week_top`, `snailrake_tourney_stats` | **de enda som är öppna för anon**: dagens ledare, veckans topp 3 (namn, poäng, antal spelare) och antal pågående turneringar och veckans turneringsrundor (bara siffror, inga koder), för hubbens kort (som aldrig skapar konton) |
 | `snailrake_push_subscriptions`, `snailrake_save_push/remove_push` | Krattans egna push-prenumerationer (som Snail Story) — en Krattan-notis når aldrig ett annat spels service worker |
 | `snailrake_push_queue`, `snailrake_take_push` | notiser som RPC:erna köar (`beaten`, `result`, `rematch`); edge-funktionen tömmer kön, högst en gång |
 | `snailrake_tourney_settle`, `snailrake_settle_due` | avgör turneringar vars deadline passerat när ingen spelar längre, och köar resultaten |
@@ -26,7 +26,7 @@ snailmageddon-repots `supabase/README.md`.
 | edge-funktion `snailrake-notify` | skickar köade notiser. `verify_jwt` av; bara cron-jobbet når den (`x-cron-key` = Vault-hemligheten `snailrake_cron_key`) |
 | `snailrake_cleanup` + cron `snailrake_cleanup` (04:47) | turneringar efter 30 dagar, veckorader efter ett år, dagens hög efter 90 dagar |
 
-Allt är `security definer`, och allt utom de två anon-funktionerna ovan kräver `auth.uid()`; klienten når aldrig
+Allt är `security definer`, och allt utom de tre anon-funktionerna ovan kräver `auth.uid()`; klienten når aldrig
 tabellerna (RLS på, inga policyer, `revoke all`). Inga användar-id lämnar servern.
 
 ## Regler som servern håller
