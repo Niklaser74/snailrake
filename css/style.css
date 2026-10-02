@@ -100,3 +100,4 @@ footer a { color: inherit; }
 .mine button:hover { background: var(--chip); }
 #board, #tourney, #lobby { z-index: 11; }
 .code.day { font-size: 26px; letter-spacing: .02em; padding-left: 0; }
+.tabs-label { margin: 2px 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); }

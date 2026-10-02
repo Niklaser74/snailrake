@@ -7,7 +7,8 @@ import { LEVELS } from './levels.js';
 import { t, setLang, detectLang, getLang } from './i18n.js';
 import { setMuted, isMuted, unlockAudio, sfx } from './game/audio.js';
 import { APP_VERSION } from './config.js';
-import { net, normCode, cleanName, inviteLink, clock, errorKey, isDaily, DURATIONS, DEFAULT_DURATION, PROGRESS_EVERY, LOBBY_POLL } from './online.js';
+import { push } from './push.js';
+import { net, normCode, cleanName, inviteLink, clock, errorKey, isDaily, untilLabel, DEADLINES, DEFAULT_DEADLINE, DURATIONS, DEFAULT_DURATION, PROGRESS_EVERY, LOBBY_POLL } from './online.js';
 
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -47,6 +48,18 @@ $('btn-again').addEventListener('click', () => {
   if (tourney) { const code = tourney.code; leaveTourney(); openLobby(code); } else newGame();
 });
 $('btn-over-board').addEventListener('click', () => { openBoard(); });
+// Utmana: a tournament with the usual settings, straight to its lobby and the share sheet.
+$('btn-over-challenge').addEventListener('click', async () => {
+  const b = $('btn-over-challenge');
+  b.disabled = true;
+  try {
+    const r = await net.tourney.create(duration, deadline);
+    $('over').hidden = true;
+    openLobby(r.code, r);
+    shareLobby(t('challenge.text', { min: r.duration / 60, code: r.code }));
+  } catch (e) { $('over-rank').textContent = t(errorKey(e)); }
+  finally { b.disabled = false; }
+});
 $('btn-over-menu').addEventListener('click', () => { $('over').hidden = true; if (tourney) leaveTourney(); showMenu(); });
 $('btn-mute').addEventListener('click', () => { setMuted(!isMuted()); store.set('muted', isMuted()); refreshMute(); });
 function refreshMute() {
@@ -130,6 +143,7 @@ function gameOver(reason) {
   $('over-score').textContent = t('over.score', { score: g.score });
   $('btn-again').textContent = t(!tourney ? 'over.again' : isDaily(tourney.code) ? 'over.toDaily' : 'over.toLobby');
   $('btn-over-board').hidden = !!tourney;
+  $('btn-over-challenge').hidden = !!tourney || !net.available();
   $('over-rank').textContent = '';
   $('over-name').hidden = true;
   if (tourney) {
@@ -238,8 +252,27 @@ function renderDurations() {
     return b;
   }));
 }
+let deadline = store.get('tdeadline', DEFAULT_DEADLINE);
+if (!DEADLINES.includes(deadline)) deadline = DEFAULT_DEADLINE;
+function renderDeadlines() {
+  $('t-deadlines').replaceChildren(...DEADLINES.map((h) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = t('tourney.h' + h);
+    b.setAttribute('aria-pressed', String(h === deadline));
+    b.addEventListener('click', () => { deadline = h; store.set('tdeadline', h); renderDeadlines(); });
+    return b;
+  }));
+}
+// How a tournament stands, in a few words: settled and who won, or how long it has left.
+function standing(r) {
+  if (r.final) return r.winner ? t('tourney.settled', { winner: r.winner }) : t('tourney.settledNone');
+  if (r.status === 'closed') return t('tourney.settling');
+  return t('tourney.left', { left: untilLabel(new Date(r.closes_at) - new Date(r.now)) });
+}
 async function openTourneyPanel() {
   renderDurations();
+  renderDeadlines();
   $('t-status').textContent = '';
   $('t-code').placeholder = t('tourney.code');
   $('tourney').hidden = false;
@@ -252,7 +285,7 @@ async function openTourneyPanel() {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'link';
-      b.textContent = t('tourney.mineRow', { code: m.code, min: m.duration / 60, players: m.players }) + (m.status === 'closed' ? ' · ' + t('tourney.closedTag') : '');
+      b.textContent = t('tourney.mineRow', { code: m.code, min: m.duration / 60, players: m.players }) + ' · ' + standing(m);
       b.addEventListener('click', () => { $('tourney').hidden = true; openLobby(m.code); });
       li.append(b);
       return li;
@@ -266,7 +299,7 @@ $('btn-t-close').addEventListener('click', () => { $('tourney').hidden = true; }
 $('btn-t-create').addEventListener('click', async () => {
   $('t-status').textContent = t('board.loading');
   try {
-    const r = await net.tourney.create(duration);
+    const r = await net.tourney.create(duration, deadline);
     $('tourney').hidden = true;
     openLobby(r.code, r);
   } catch (e) { $('t-status').textContent = t(errorKey(e)); }
@@ -294,6 +327,8 @@ function openLobby(code, data = null) {
   $('l-list').replaceChildren();
   $('btn-l-play').hidden = true;
   $('btn-l-end').hidden = true;
+  $('btn-l-rematch').hidden = true;
+  $('btn-l-push').hidden = true;
   $('btn-l-share').hidden = false;
   $('l-status').textContent = data ? '' : t('board.loading');
   lobby = data && data.code === code ? data : { code };
@@ -335,7 +370,8 @@ function renderLobby() {
   if (daily) $('l-code').textContent = dayLabel(r.day);
   $('btn-l-share').hidden = r.status !== 'open' && !daily;
   const players = daily ? r.total : r.entries.length;
-  $('l-info').textContent = t(daily ? 'daily.info' : r.status === 'open' ? 'tourney.info' : 'tourney.infoClosed', { min, players });
+  $('l-info').textContent = daily ? t('daily.info', { min, players })
+    : t('tourney.info', { min, players }) + ' · ' + standing({ ...r, winner: r.entries[0]?.name });
   renderList($('l-list'), r.entries.map((e) => ({ name: e.name, score: e.score, me: e.me, tag: e.state === 'playing' ? t('tourney.playing') : '' })));
   if (!r.entries.length) $('l-status').textContent = t(daily ? 'daily.empty' : 'tourney.empty');
   const me = r.me;
@@ -357,17 +393,54 @@ function renderLobby() {
   if (play) $('btn-l-play').textContent = t(play);
   $('l-name').hidden = !!me;
   $('btn-l-end').hidden = !(r.host && r.status === 'open');
+  // Snigelpost: a rematch once it is over, and push so nobody has to keep checking
+  const canRematch = !daily && r.status === 'closed' && (me || r.host);
+  $('btn-l-rematch').hidden = !canRematch;
+  if (canRematch) $('btn-l-rematch').textContent = t(r.rematch ? 'tourney.toRematch' : 'tourney.rematch');
+  if (daily) $('btn-l-push').hidden = true; else refreshPushButton();
 }
+function refreshPushButton() {
+  const b = $('btn-l-push');
+  if (!push.supported()) { b.hidden = true; return; }
+  b.hidden = false;
+  if (push.needsInstall()) { b.textContent = t('push.install'); b.disabled = true; return; }
+  const p = push.permission();
+  b.disabled = p === 'denied';
+  b.textContent = p === 'denied' ? t('push.denied') : p === 'granted' ? t('push.on') : t('push.ask');
+  b.dataset.on = String(p === 'granted');
+  if (p === 'granted') push.current().then((sub) => { if (!sub) { b.textContent = t('push.ask'); b.dataset.on = 'false'; } });
+}
+$('btn-l-push').addEventListener('click', async () => {
+  const b = $('btn-l-push');
+  b.disabled = true;
+  try {
+    if (b.dataset.on === 'true') await push.unsubscribe(); else await push.subscribe(getLang());
+  } catch { /* refreshed below */ }
+  b.disabled = false;
+  refreshPushButton();
+  if (b.dataset.on === 'true' && !(await push.current())) { b.textContent = t('push.ask'); b.dataset.on = 'false'; }
+});
+$('btn-l-rematch').addEventListener('click', async () => {
+  const r = lobby;
+  if (r.rematch) { openLobby(r.rematch); return; }
+  $('btn-l-rematch').disabled = true;
+  try { const n = await net.tourney.rematch(r.code, playerName()); openLobby(n.code, n); }
+  catch (e) { $('l-status').textContent = t(errorKey(e)); }
+  finally { $('btn-l-rematch').disabled = false; }
+});
 $('btn-l-back').addEventListener('click', () => { closeLobby(); showMenu(); });
-$('btn-l-share').addEventListener('click', async () => {
-  const url = inviteLink(lobby.code);
+$('btn-l-share').addEventListener('click', () => {
   const text = !isDaily(lobby.code) ? t('tourney.shareText', { code: lobby.code })
     : lobby.me?.done ? t('daily.shareScore', { score: lobby.me.score }) : t('daily.shareText');
+  shareLobby(text);
+});
+async function shareLobby(text) {
+  const url = inviteLink(lobby.code);
   try {
     if (navigator.share) { await navigator.share({ title: t('app.name'), text, url }); return; }
   } catch (e) { if (e?.name === 'AbortError') return; }
   try { await navigator.clipboard.writeText(url); $('l-status').textContent = t('tourney.copied'); } catch { $('l-status').textContent = url; }
-});
+}
 $('btn-l-end').addEventListener('click', async () => {
   if (!confirm(t('tourney.endConfirm'))) return;
   try { lobby = await net.tourney.close(lobby.code); renderLobby(); } catch (e) { $('l-status').textContent = t(errorKey(e)); }
@@ -468,7 +541,7 @@ addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPro
 $('btn-install').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; $('btn-install').hidden = true; });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').then(() => { $('offline-hint').textContent = t('menu.offline'); }).catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(() => { $('offline-hint').textContent = t('menu.offline'); push.resubscribe(getLang()); }).catch(() => {});
   });
 }
 

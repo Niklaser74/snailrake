@@ -17,6 +17,7 @@ const ASSETS = [
   './js/i18n.js',
   './js/config.js',
   './js/online.js',
+  './js/push.js',
   './js/supa.js',
   './js/account.js',
   './js/game/snails.js',
@@ -57,4 +58,31 @@ self.addEventListener('fetch', (e) => {
       return cached || network;
     })
   );
+});
+
+// ---------- Web Push: tournament notices ----------
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Snigelkrattan', {
+    body: d.body || '',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    tag: d.tag || 'snailrake',
+    renotify: true,
+    data: { url: d.url || './' },
+  }));
+});
+
+// Only our own windows: every game on snails.se shares the origin, and taking
+// over a Snäckmageddon tab would be rude.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) {
+      if (c.url.includes('/snailrake/') && 'focus' in c) { if ('navigate' in c) c.navigate(url); return c.focus(); }
+    }
+    return clients.openWindow(url);
+  }));
 });

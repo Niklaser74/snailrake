@@ -114,7 +114,10 @@
     <h2 data-i18n="tourney.title">Turnering</h2>
     <p class="why" data-i18n="tourney.intro">Alla kör en runda lika länge, med samma sniglar i samma ordning. Ett försök var — flest poäng vinner.</p>
     <h3 data-i18n="tourney.create">Starta en ny</h3>
+    <p class="tabs-label" data-i18n="tourney.round">Rundans längd</p>
     <div id="t-durations" class="tabs" role="group"></div>
+    <p class="tabs-label" data-i18n="tourney.deadline">Avgörs efter</p>
+    <div id="t-deadlines" class="tabs" role="group"></div>
     <button id="btn-t-create" class="btn primary" data-i18n="tourney.createBtn">Skapa turnering</button>
     <h3 data-i18n="tourney.join">Gå med</h3>
     <form id="t-join" class="join-row">
@@ -150,6 +153,8 @@
     <p id="l-status" class="hint"></p>
     <div class="actions">
       <button id="btn-l-play" class="btn primary" data-i18n="tourney.play">Starta min runda</button>
+      <button id="btn-l-rematch" class="btn primary" hidden data-i18n="tourney.rematch">Revansch</button>
+      <button id="btn-l-push" class="btn secondary" hidden data-i18n="push.ask">Säg till när något händer</button>
       <button id="btn-l-end" class="btn secondary" hidden data-i18n="tourney.end">Stäng turneringen</button>
       <button id="btn-l-back" class="btn secondary" data-i18n="over.menu">Till menyn</button>
     </div>
@@ -171,6 +176,7 @@
     </form>
     <div class="actions">
       <button id="btn-again" class="btn primary" data-i18n="over.again">Spela igen</button>
+      <button id="btn-over-challenge" class="btn secondary" hidden data-i18n="over.challenge">Utmana en vän</button>
       <button id="btn-over-board" class="btn secondary" data-i18n="menu.board">Topplista</button>
       <button id="btn-over-menu" class="btn secondary" data-i18n="over.menu">Till menyn</button>
     </div>

@@ -8,6 +8,8 @@ import { RULES_VERSION } from './config.js';
 
 export const DURATIONS = [60, 120, 180, 300];   // seconds a tournament run may last
 export const DEFAULT_DURATION = 180;
+export const DEADLINES = [24, 72, 168];          // hours a tournament stays open before it settles by itself
+export const DEFAULT_DEADLINE = 24;
 export const PROGRESS_EVERY = 10;               // s of game time between tournament progress reports
 export const LOBBY_POLL = 5000;                 // ms between standings refreshes in the lobby
 const CODE_RE = /^[A-HJKMNP-Z2-9]{5}$/;         // no 0/O, 1/I/L: read aloud across a room
@@ -33,6 +35,14 @@ export function inviteLink(code, loc = globalThis.location) {
   const q = isDaily(code) ? 'daily=1' : `t=${encodeURIComponent(code)}`;
   return `${loc.origin}${loc.pathname}?${q}`;
 }
+// Time left until a deadline, short and language-neutral: "2 d 3 h", "5 h 10 min", "4 min".
+export function untilLabel(ms) {
+  const m = Math.max(0, Math.ceil(ms / 60000));
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), min = m % 60;
+  if (d) return h ? `${d} d ${h} h` : `${d} d`;
+  if (h) return min ? `${h} h ${min} min` : `${h} h`;
+  return `${min} min`;
+}
 export function clock(seconds) {
   const s = Math.max(0, Math.ceil(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -46,6 +56,7 @@ export function errorKey(e) {
   if (m.includes('tournament full')) return 'err.full';
   if (m.includes('too many')) return 'err.tooMany';
   if (m.includes('old rules')) return 'err.update';
+  if (m.includes('still open')) return 'err.stillOpen';
   return 'err.net';
 }
 
@@ -92,7 +103,8 @@ export const net = {
   },
 
   tourney: {
-    create: (duration) => online.rpc('snailrake_tourney_create', { p_duration: duration }),
+    create: (duration, hours) => online.rpc('snailrake_tourney_create', { p_duration: duration, p_hours: hours }),
+    rematch: (code, name) => online.rpc('snailrake_tourney_rematch', { p_code: code, p_name: cleanName(name) }),
     get: (code) => online.rpc('snailrake_tourney_get', { p_code: code }),
     start: (code, name) => online.rpc('snailrake_tourney_start', { p_code: code, p_name: cleanName(name) }),
     progress: (code, g, final) => online.rpc('snailrake_tourney_progress', {

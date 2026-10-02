@@ -21,10 +21,13 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', b, 'role', 'authenticated')::text, true);
   perform set_config('request.jwt.claim.sub', b::text, true);
   j := public.snailrake_submit(900, 150, 70, '  Bo' || chr(10), 1);
-  if (j->>'week_rank')::int <> 1 then raise exception 'Bo should lead: %', j; end if;
+  -- (real players are on the boards too, so ranks are checked relative to Anna, not as absolutes)
+  if (j->>'week_rank')::int >= (select count(*) + 1 from public.snailrake_weekly x where x.week = public.snailrake_week() and x.score > 500)
+    then raise exception 'Bo should be above Anna: %', j; end if;
   j := public.snailrake_board('all');
-  if j->'top'->0->>'name' <> 'Bo' or (j->'top'->0->>'me')::boolean is not true or (j->'me'->>'rank')::int <> 1 then raise exception 'board: %', j; end if;
-  if (j->'top'->1->>'score')::int <> 500 or (select games from public.snailrake_best where user_id = a) <> 2 then raise exception 'Anna row: %', j; end if;
+  if (j->'me'->>'score')::int <> 900 or not exists (select 1 from jsonb_array_elements(j->'top') r where (r->>'me')::boolean and (r->>'score')::int = 900)
+    then raise exception 'board: %', j; end if;
+  if (select score from public.snailrake_best where user_id = a) <> 500 or (select games from public.snailrake_best where user_id = a) <> 2 then raise exception 'Anna row'; end if;
   log := log || 'best kept, ranks, board; ';
 
   -- 2: implausible scores and old rules are refused
